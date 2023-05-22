@@ -51,3 +51,4 @@ resource "aws_instance" "clients" {
     Name = format("client-%d", count.index + 1)
   }
 }
+
