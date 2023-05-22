@@ -1,0 +1,56 @@
+---
+- name: Bootstrap consul servers & agents
+  hosts: consul_instances
+  any_errors_fatal: true
+  become: true
+  become_user: root
+  pre_tasks:
+    - name: Install packages
+      apt:
+        update_cache: yes
+        pkg:
+          - python3-pip
+          - python3-netaddr
+          - unzip
+        state: present
+      delegate_to: 127.0.0.1
+      run_once: true
+  roles:
+    - role: ansible-consul
+      vars:
+        consul_cloud_autodiscovery: false
+    - role: geerlingguy.docker
+
+- name: Bootstrap nomad servers & agents
+  hosts: nomad_instances
+  any_errors_fatal: true
+  become: true
+  become_user: root
+  roles:
+    - role: ansible-nomad
+      vars:
+        nomad_docker_enable: true
+        nomad_telemetry: true
+        nomad_telemetry_prometheus_metrics: true
+        nomad_telemetry_publish_allocation_metrics: true
+        nomad_telemetry_publish_node_metrics: true
+...
+
+
+# wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+
+# gpg --no-default-keyring --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg --fingerprint
+# 98A EC65 4E5C 1542 8C8E 42EE AA16 FCBC A621 E701
+
+
+# echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+
+# apt update
+
+# apt install vault
+
+
+# sudo mkdir -p /etc/vault /vault-data /var/logs/vault/
+

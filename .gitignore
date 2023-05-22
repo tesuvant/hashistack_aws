@@ -39,3 +39,4 @@ terraform.rc
 *.pem
 *.out
 inventory
+.terraform.lock.hcl

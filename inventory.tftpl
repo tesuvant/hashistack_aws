@@ -1,0 +1,15 @@
+[all:vars]
+ansible_ssh_common_args='-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+consul_join=[%{ for ip in servers-ip ~}"${ip}",%{ endfor ~}]
+
+[consul_instances]
+%{ for index, dns in servers-dns ~}
+${dns} ansible_host=${servers-ip[index]} nomad_node_role=server consul_node_role=%{ if index == 0 ~}bootstrap %{ else ~}server %{ endif ~}
+
+%{ endfor ~}
+%{ for index, dns in clients-dns ~}
+${dns} ansible_host=${clients-ip[index]} nomad_node_role=client consul_node_role=client
+%{ endfor ~}
+
+[nomad_instances:children]
+consul_instances

@@ -1,0 +1,14 @@
+---
+- src: https://github.com/ansible-community/ansible-consul.git
+  name: ansible-consul
+  scm: git
+  version: v3.0.1
+- src: https://github.com/ansible-community/ansible-nomad.git
+  name: ansible-nomad
+  scm: git
+  version: v1.9.6
+- src: https://github.com/geerlingguy/ansible-role-docker.git
+  name: geerlingguy.docker
+  scm: git
+  version: 6.1.0
+...
