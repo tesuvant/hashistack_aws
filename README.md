@@ -2,7 +2,7 @@
 This repo contains IaC for setting up Hashistack in AWS cloud.
 ## Tech Stack
 - IaC: Terraform, Ansible
-- HashiCorp stack: Consul, Nomad, Vault
+- HashiCorp stack: Consul, Nomad, ~Vault~
 - Infra: EC2@AWS, Ubuntu OS
 - Docker
 
