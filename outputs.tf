@@ -2,6 +2,13 @@ output "bastion_public_ip" {
   value = ""
 }
 
+# Fix for TF Cloud
+# https://discuss.hashicorp.com/t/tls-private-key-get-private-key-for-use-with-tools-putty-or-ansible/38429
+output "private_key" {
+  value     = tls_private_key.ssh.private_key_pem
+  sensitive = true
+}
+
 output "How_to_SSH" {
   value = <<TXT
   ### BASTION
