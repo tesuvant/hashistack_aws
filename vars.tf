@@ -56,7 +56,7 @@ variable "client_instance_type" {
 
 variable "client_node_count" {
   type    = number
-  default = 1
+  default = 3
   description = "Number of client nodes in the cluster"
 }
 
