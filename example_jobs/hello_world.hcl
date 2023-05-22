@@ -1,0 +1,29 @@
+# https://developer.hashicorp.com/nomad/tutorials/manage-jobs/jobs-submit
+# nomad job plan hello_world.hcl
+# nomad job run hello_world.hcl
+
+job "docs" {
+  datacenters = ["dc1"]
+
+  group "example" {
+    network {
+      port "http" {
+        static = "5678"
+      }
+    }
+    task "server" {
+      driver = "docker"
+
+      config {
+        image = "hashicorp/http-echo"
+        ports = ["http"]
+        args = [
+          "-listen",
+          ":5678",
+          "-text",
+          "hello world",
+        ]
+      }
+    }
+  }
+}
