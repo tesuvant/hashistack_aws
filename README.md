@@ -32,9 +32,7 @@ Terraform apply will make sure it will provision all required infrastructure and
 
 NOTE. In orer to ssh to the Bastion host, please use "hashi_cluster.pem" key in your project folder. The key is generated during the provisioning and added to the Bastion host too, and the key will be used when running Ansible part.
 
-## Docs
-Install instructions are taken from ...
-[Vault](https://developer.hashicorp.com/vault/docs/install)
-[Consul](https://developer.hashicorp.com/consul/downloads)
-[Nomad](https://developer.hashicorp.com/nomad/docs/install)
-
+## HashiCorp Docs
+- [Vault](https://developer.hashicorp.com/vault/docs/install)
+- [Consul](https://developer.hashicorp.com/consul/downloads)
+- [Nomad](https://developer.hashicorp.com/nomad/docs/install)
