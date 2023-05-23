@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket = "helloworld.tfstate"
+    bucket = "hashistack_aws.tfstate"
     key    = "tf_state"
     region = "eu-north-1"
   }
