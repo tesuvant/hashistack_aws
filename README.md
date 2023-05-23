@@ -7,7 +7,7 @@ This repo contains IaC for setting up Hashistack in AWS cloud.
 - Docker
 
 ## The Big Picture
-![TBD](./pic.png)
+![TBD](./images/pic.png)
 
 ## Usage
 ### Prerequisites
