@@ -34,6 +34,7 @@
         nomad_telemetry_prometheus_metrics: true
         nomad_telemetry_publish_allocation_metrics: true
         nomad_telemetry_publish_node_metrics: true
+        nomad_use_consul: true
 ...
 
 
