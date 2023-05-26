@@ -9,6 +9,7 @@ job "docs" {
   datacenters = ["dc1"]
 
   group "example" {
+    count = 3
     network {
       port "http" {
         static = "5678"
