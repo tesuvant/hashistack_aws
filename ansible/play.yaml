@@ -19,6 +19,7 @@
     - role: ansible-consul
       vars:
         consul_cloud_autodiscovery: false
+        consul_version: "1.15.2"
     - role: geerlingguy.docker
 
 - name: Bootstrap nomad servers & agents
@@ -35,6 +36,7 @@
         nomad_telemetry_publish_allocation_metrics: true
         nomad_telemetry_publish_node_metrics: true
         nomad_use_consul: true
+        nomad_version: "1.5.6"
 ...
 
 
