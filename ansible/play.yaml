@@ -39,22 +39,3 @@
         nomad_use_consul: true
         nomad_version: "1.5.6"
 ...
-
-
-# wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-
-
-# gpg --no-default-keyring --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg --fingerprint
-# 98A EC65 4E5C 1542 8C8E 42EE AA16 FCBC A621 E701
-
-
-# echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-
-
-# apt update
-
-# apt install vault
-
-
-# sudo mkdir -p /etc/vault /vault-data /var/logs/vault/
-
