@@ -42,7 +42,7 @@ resource "null_resource" "copy_ansible_dir" {
 
   provisioner "file" {
     source      = "${path.root}/ansible/"
-    destination = "/home/ubuntu/ansible"
+    destination = "/home/ubuntu"
 
     connection {
       type        = "ssh"
@@ -91,7 +91,6 @@ resource "null_resource" "run_ansible" {
   provisioner "remote-exec" {
     inline = [
       "pwd && ls -la && ls -la /home/ubuntu/ansible && ls -la /home/ubuntu/ansible/roles",
-      "cd /home/ubuntu/ansible",
       "ansible-galaxy install -r roles/requirements.yaml",
       "ansible-playbook -vv -i inventory play.yaml",
     ]
