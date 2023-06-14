@@ -31,6 +31,7 @@
     - role: ansible-nomad
       vars:
         nomad_docker_enable: true
+        nomad_raft_protocol: 3
         nomad_telemetry: true
         nomad_telemetry_prometheus_metrics: true
         nomad_telemetry_publish_allocation_metrics: true
