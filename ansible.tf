@@ -41,7 +41,7 @@ resource "null_resource" "copy_ansible_dir" {
   }
 
   provisioner "file" {
-    source      = "${path.root}/ansible"
+    source      = "${path.root}/ansible/"
     destination = "/home/ubuntu/ansible"
 
     connection {
