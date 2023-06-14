@@ -90,6 +90,7 @@ resource "null_resource" "run_ansible" {
 
   provisioner "remote-exec" {
     inline = [
+      "env|sort",
       "pwd && ls -la && ls -la /home/ubuntu/ansible && ls -la /home/ubuntu/ansible/roles",
       "ansible-galaxy install -r roles/requirements.yaml",
       "ansible-playbook -vv -i inventory play.yaml",
