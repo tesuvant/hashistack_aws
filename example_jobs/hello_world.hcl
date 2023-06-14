@@ -70,7 +70,7 @@ job "website" {
         tags = ["global", "website","helloworld","urlprefix-/"]
         port = "website"
         check {
-          name     = "alive"
+          name     = "HelloWorld HTTP Check"
           type     = "http"
           interval = "10s"
           path   = "/"
