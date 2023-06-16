@@ -41,7 +41,7 @@
           DNS=127.0.0.1
           DNSSEC=false
           Domains=~consul
-    - name: Redirect local DNS (udp)
+    - name: Redirect local DNS - PPREROUTING udp
       iptables:
         table: nat
         chain: PREROUTING
@@ -50,7 +50,7 @@
         destination_port: 53
         jump: REDIRECT
         to_ports: 8600
-    - name: Redirect local DNS (tcp)
+    - name: Redirect local DNS - PREROUTING tcp
       iptables:
         table: nat
         chain: PREROUTING
@@ -59,6 +59,26 @@
         destination_port: 53
         jump: REDIRECT
         to_ports: 8600
+    - name: Redirect local DNS - OUTPUT udp
+      iptables:
+        table: nat
+        chain: OUTPUT
+        protocol: udp
+        match: udp
+        destination_port: 53
+        jump: REDIRECT
+        to_ports: 8600
+        destination: localhost
+    - name: Redirect local DNS - OUTPUT tcp
+      iptables:
+        table: nat
+        chain: OUTPUT
+        protocol: tcp
+        match: tcp
+        destination_port: 53
+        jump: REDIRECT
+        to_ports: 8600
+        destination: localhost
     - name: Restart systemd-resolved
       systemd:
         name: systemd-resolved
