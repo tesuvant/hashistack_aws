@@ -19,8 +19,6 @@
     - role: ansible-consul
       vars:
         consul_cloud_autodiscovery: false
-        consul_iptables_enable: true
-        consul_recursors: ["1.1.1.1"]
         consul_version: "1.15.2"
     - role: geerlingguy.docker
 
