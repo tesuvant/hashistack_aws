@@ -21,6 +21,25 @@
         consul_cloud_autodiscovery: false
         consul_version: "1.15.2"
     - role: geerlingguy.docker
+  tasks:
+    - name: Create config dir for systemd-resolved
+      file:
+        path: /etc/systemd/resolved.conf.d/
+        state: directory
+        mode: '0644'
+    - name: Create config file for systemd-resolved
+      copy:
+        dest: /etc/systemd/resolved.conf.d/consul.conf
+        content: |
+          [Resolve]
+          DNS=127.0.0.1
+          DNSSEC=false
+          Domains=~consul
+    - name: Restart systemd-resolved
+      systemd:
+        name: systemd-resolved
+        state: restarted
+        daemon_reload: true
 
 - name: Bootstrap nomad servers & agents
   hosts: nomad_instances
