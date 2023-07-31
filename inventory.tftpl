@@ -11,7 +11,7 @@ ${dns} ansible_host=${servers-ip[index]} nomad_node_role=server consul_node_role
 ${dns} ansible_host=${clients-ip[index]} nomad_node_role=client consul_node_role=client
 %{ endfor ~}
 
-[traefik]
+[traefik_instances]
 %{ for index, dns in traefik-dns ~}
 ${dns} ansible_host=${traefik-ip[index]} consul_node_role=client
 

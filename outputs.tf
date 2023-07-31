@@ -11,6 +11,10 @@ output "private_key" {
 
 output "How_to_SSH" {
   value = <<TXT
+  ### CONVERT LINE BREAKS
+  echo "...-----END RSA PRIVATE KEY-----\n" | gsed 's/\\n/\
+  /g'
+
   ### BASTION
   ssh -i ${local_file.hashi_cluster.filename} ${var.ssh_user}@${aws_instance.bastion.public_ip}
 
