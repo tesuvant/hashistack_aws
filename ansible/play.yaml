@@ -140,8 +140,7 @@
         image: traefik:2.10
         restart_policy: unless-stopped
         recreate: true
-        networks:
-          - name: web
+        network_mode: host
         ports:
           - "80:80"
           - "443:443"
