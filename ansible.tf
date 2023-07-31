@@ -11,6 +11,9 @@ resource "local_file" "ansible_inventory" {
       servers-dns = aws_instance.servers.*.private_dns,
       servers-ip  = aws_instance.servers.*.private_ip,
       servers-id  = aws_instance.servers.*.id,
+      traefik-dns = aws_instance.traefik.*.private_dns,
+      traefik-ip  = aws_instance.traefik.*.private_ip,
+      traefik-id  = aws_instance.traefik.*.id,
     }
   )
   filename = "${path.root}/ansible/inventory"

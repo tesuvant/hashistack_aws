@@ -67,7 +67,16 @@ job "website" {
 
       service {
         name = "helloworld"
-        tags = ["global", "website","helloworld","urlprefix-/"]
+        tags = [
+          "global",
+          "website",
+          "helloworld",
+          "urlprefix-/",
+          "traefik.enable=true",
+          "traefik.http.routers.traefik.rule=Host(`helloworld.service.consul`)",
+          "traefik.http.routers.traefik.entryPoints=http",
+          "traefik.http.routers.traefik.tls=false"
+        ]
         port = "website"
         check {
           name     = "HelloWorld HTTP Check"

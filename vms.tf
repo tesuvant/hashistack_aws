@@ -52,3 +52,17 @@ resource "aws_instance" "clients" {
   }
 }
 
+resource "aws_instance" "traefik" {
+  count                  = 3
+  ami                    = var.ami_id
+  instance_type          = var.traefik_instance_type
+  subnet_id              = element(module.vpc.private_subnets, count.index)
+  key_name               = aws_key_pair.hashi_ssh.key_name
+  vpc_security_group_ids = [aws_security_group.hashi_nodes.id,aws_security_group.allow_http.id]
+
+  tags = {
+    Environment = "test"
+    Name = format("traefik-%d", count.index + 1)
+  }
+}
+

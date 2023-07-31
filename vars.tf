@@ -54,6 +54,12 @@ variable "client_instance_type" {
   description = "client instance size"
 }
 
+variable "traefik_instance_type" {
+  type    = string
+  default = "t3.micro"
+  description = "traefik instance size"
+}
+
 variable "client_node_count" {
   type    = number
   default = 3

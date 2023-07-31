@@ -1,6 +1,6 @@
 ---
 - name: Bootstrap consul servers & agents
-  hosts: consul_instances
+  hosts: consul_instances,traefik
   any_errors_fatal: true
   become: true
   become_user: root
@@ -101,4 +101,51 @@
         nomad_telemetry_publish_node_metrics: true
         nomad_use_consul: true
         nomad_version: "1.5.6"
+
+- name: Setup traefik instances
+  hosts: traefik_instances
+  any_errors_fatal: true
+  become: true
+  become_user: root
+  roles:
+    - role: geerlingguy.docker
+  tasks:
+    - name: Ensures traefik dir exists
+      file:
+        path: /etc/traefik/
+        state: directory
+    - name: Create config for traefik
+      copy:
+        dest: "/etc/traefik/traefik.yaml"
+        content: |
+          api:
+            dashboard: true
+            insecure: true
+          entryPoints:
+            web:
+              address: ":80"
+          providers:
+            consulCatalog:
+              endpoint:
+                address: http://127.0.0.1:8500
+              exposedByDefault: true
+
+    - name: Create the web network
+      docker_network:
+        name: web
+
+    - name: Create the traefik container
+      docker_container:
+        name: traefik
+        image: traefik:2.10
+        restart_policy: unless-stopped
+        recreate: true
+        networks:
+          - name: web
+        ports:
+          - "80:80"
+          - "443:443"
+        volumes:
+          - /etc/traefik.yml:/etc/traefik/traefik.yaml
+          - /var/run/docker.sock:/var/run/docker.sock
 ...
