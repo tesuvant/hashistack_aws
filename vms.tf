@@ -44,7 +44,7 @@ resource "aws_instance" "clients" {
   instance_type          = var.client_instance_type
   subnet_id              = element(module.vpc.private_subnets, count.index)
   key_name               = aws_key_pair.hashi_ssh.key_name
-  vpc_security_group_ids = [aws_security_group.hashi_nodes.id]
+  vpc_security_group_ids = [aws_security_group.hashi_nodes.id, aws_security_group.allow_helloworld.id]
 
   tags = {
     Environment = "test"
@@ -58,7 +58,7 @@ resource "aws_instance" "traefik" {
   instance_type          = var.traefik_instance_type
   subnet_id              = element(module.vpc.private_subnets, count.index)
   key_name               = aws_key_pair.hashi_ssh.key_name
-  vpc_security_group_ids = [aws_security_group.hashi_nodes.id,aws_security_group.allow_http.id]
+  vpc_security_group_ids = [aws_security_group.hashi_nodes.id, aws_security_group.allow_http.id]
 
   tags = {
     Environment = "test"

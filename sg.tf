@@ -150,6 +150,19 @@ resource "aws_security_group" "allow_http" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["${var.vpc_cidr}"]
+  }
+}
+
+resource "aws_security_group" "allow_helloworld" {
+  name        = "allow_http"
+  description = "Allow incoming http"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 5678
+    to_port     = 5678
+    protocol    = "tcp"
+    cidr_blocks = ["${var.vpc_cidr}"]
   }
 }
