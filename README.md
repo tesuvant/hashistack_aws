@@ -147,3 +147,48 @@ ubuntu@ip-10-0-101-134:~$
 - [Vault](https://developer.hashicorp.com/vault/docs/install)
 - [Consul](https://developer.hashicorp.com/consul/downloads)
 - [Nomad](https://developer.hashicorp.com/nomad/docs/install)
+
+
+
+
+
+
+
+ubuntu@ip-10-0-1-54:~$ curl -L  -v -H Host:helloworld.service.consul:5678  http://127.0.0.1:8080
+*   Trying 127.0.0.1:8080...
+* Connected to 127.0.0.1 (127.0.0.1) port 8080 (#0)
+> GET / HTTP/1.1
+> Host:helloworld.service.consul:5678
+> User-Agent: curl/7.81.0
+> Accept: */*
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 301 Moved Permanently
+< Location: http://helloworld.service.consul:5678/dashboard/
+< Date: Tue, 01 Aug 2023 17:06:10 GMT
+< Content-Length: 17
+< Content-Type: text/plain; charset=utf-8
+<
+* Ignoring the response-body
+* Connection #0 to host 127.0.0.1 left intact
+* Clear auth, redirects to port from 8080 to 5678
+* Issue another request to this URL: 'http://helloworld.service.consul:5678/dashboard/'
+*   Trying 10.0.1.50:5678...
+* Connected to helloworld.service.consul (10.0.1.50) port 5678 (#1)
+> GET /dashboard/ HTTP/1.1
+> Host: helloworld.service.consul:5678
+> User-Agent: curl/7.81.0
+> Accept: */*
+>
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< X-App-Name: http-echo
+< X-App-Version: 0.2.3
+< Date: Tue, 01 Aug 2023 17:06:10 GMT
+< Content-Length: 12
+< Content-Type: text/plain; charset=utf-8
+<
+hello world
+* Connection #1 to host helloworld.service.consul left intact
+ubuntu@ip-10-0-1-54:~$
+
