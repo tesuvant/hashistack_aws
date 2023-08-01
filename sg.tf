@@ -155,8 +155,8 @@ resource "aws_security_group" "allow_http" {
 }
 
 resource "aws_security_group" "allow_helloworld" {
-  name        = "allow_http"
-  description = "Allow incoming http"
+  name        = "allow_helloworld"
+  description = "Allow incoming http port 5678"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
