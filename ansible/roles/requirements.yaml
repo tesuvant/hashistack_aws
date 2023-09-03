@@ -7,6 +7,10 @@
   name: ansible-nomad
   scm: git
   version: v1.9.6
+- src: https://github.com/ansible-community/ansible-vault
+  name: ansible-vault
+  scm: git
+  version: v2.5.8
 - src: https://github.com/geerlingguy/ansible-role-docker.git
   name: geerlingguy.docker
   scm: git
