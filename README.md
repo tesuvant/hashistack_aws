@@ -3,7 +3,7 @@ This repo contains IaC for setting up Hashistack in AWS cloud.
 ## Tech Stack
 - IaC: Ansible, Terraform, [Terraform Cloud](https://app.terraform.io/)
 - Infra: AWS, EC2, S3, Ubuntu OS
-- SW: Consul, Docker, Nomad, ~Vault~c
+- SW: Consul, Docker, Nomad, ~Vault~
 ## The Big Picture
 ![Picture](./images/pic.png)
 
