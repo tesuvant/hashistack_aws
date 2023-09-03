@@ -85,6 +85,43 @@
         state: restarted
         daemon_reload: true
 
+- name: Bootstrap Vaultt
+  hosts:
+    - vault_instances
+  become: true
+  gather_facts: true
+  any_errors_fatal: true
+  roles:
+    - role: ansible-vault
+      vars:
+        vault_backend: consul
+        vault_version: 1.14.2
+  tasks:
+    - name: init Vault
+      shell: vault operator init -format json
+      register: vault_init_json
+      delegate_to: "{{ play_hosts | first }}"
+      run_once: true
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+
+    - name: Convert JSON to Ansible variable structure
+      set_fact:
+        vault_init: "{{ vault_init_json.stdout | from_json }}"
+
+    - name: Write unseal keys to local files
+      copy:
+        content: "{{ item.1 }}"
+        dest: "vault_unseal_{{ item.0 }}.key"
+      with_indexed_items: "{{ vault_init.unseal_keys_hex }}"
+      delegate_to: localhost
+
+    - name: Write root token to a local file
+      copy:
+        content: "{{ vault_init.root_token }}"
+        dest: "vault_rootkey"
+      delegate_to: localhost
+
 - name: Bootstrap nomad servers & agents
   hosts: nomad_instances
   any_errors_fatal: true
