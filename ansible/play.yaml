@@ -1,4 +1,20 @@
 ---
+- name: Install dependencies
+  hosts: all, localhost
+  become: true
+  become_user: root
+  tasks:
+    - name: Install packages
+      apt:
+        update_cache: yes
+        pkg:
+          - jq
+          - python3-pip
+          - python3-netaddr
+          - net-tools
+          - unzip
+        state: present
+
 - name: Bootstrap Vault
   hosts:
     - vault_instances
@@ -9,6 +25,14 @@
     - role: ansible-vault
       vars:
         vault_version: 1.14.2
+  pre_tasks:
+  - name: Add VAULT_ADDR env variable
+    lineinfile:
+      path: "{{ item }}/.bashrc"
+      line: "export VAULT_ADDR=http://{{ ansible_host }}:8200"
+    with_items:
+      - /root
+      - /home/ubuntu
   tasks:
     - name: init Vault
       ansible.builtin.include_tasks:

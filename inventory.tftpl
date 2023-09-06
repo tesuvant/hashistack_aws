@@ -5,7 +5,6 @@ consul_join=[%{ for ip in servers-ip ~}"${ip}",%{ endfor ~}]
 [vault_instances]
 %{ for index, dns in servers-dns ~}
 ${dns} ansible_host=${servers-ip[index]}
-
 %{ endfor ~}
 
 [consul_instances]
