@@ -23,13 +23,10 @@ resource "aws_security_group" "allow_ssh" {
   }
 }
 
-resource "aws_security_group" "hashi_nodes" {
-  name        = "hashi_nodes"
-  description = "Security Group for hashi servers"
+resource "aws_security_group" "allow_ssh_within_vpc" {
+  name        = "allow_ssh_within_vpc"
+  description = "Allow incoming ssh within vpc"
   vpc_id      = module.vpc.vpc_id
-
-  ### SSH BEGIN
-  # Allow SSH within CIDR
 
   ingress {
     from_port   = 22
@@ -49,7 +46,22 @@ resource "aws_security_group" "hashi_nodes" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  ### SSH END
+}
+resource "aws_security_group" "hashi_nodes" {
+  name        = "hashi_nodes"
+  description = "Security Group for hashi servers"
+  vpc_id      = module.vpc.vpc_id
+
+  ### VAULT BEGIN
+  # API, CLUSTER - TCP
+  ingress {
+    from_port   = 8200
+    to_port     = 8201
+    protocol    = "tcp"
+    cidr_blocks = ["${var.vpc_cidr}"]
+  }
+  ### VAULT END
+
   ### CONSUL BEGIN
   # DNS server - TCP, UDP
   ingress {

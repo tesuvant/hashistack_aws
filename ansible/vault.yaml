@@ -1,0 +1,239 @@
+---
+- name: Bootstrap Vault
+  hosts:
+    - vault_instances
+  become: true
+  gather_facts: true
+  any_errors_fatal: true
+  roles:
+    - role: ansible-vault
+      vars:
+        vault_backend: consul
+        vault_version: 1.14.2
+  tasks:
+    - name: init Vault
+      shell: vault operator init -format json
+      register: vault_init
+      delegate_to: "{{ play_hosts | first }}"
+      run_once: true
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+
+    - name: Parse output of vault init
+      delegate_to: "{{ play_hosts | first }}"
+      run_once: true
+      set_fact:
+        vault_init_parsed: "{{ vault_init.stdout | from_json }}"
+
+    - name: Write unseal keys to files
+      copy:
+        dest: "unseal_key_{{ item.0 }}"
+        content: "{{ item.1 }}"
+      with_indexed_items: "{{ vault_init_parsed.unseal_keys_hex }}"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Write root token to file
+      copy:
+        content: "{{ vault_init_parsed.root_token }}"
+        dest: "rootkey"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Reading unseal key contents
+      delegate_to: localhost
+      shell: "cat {{ item }}"
+      register: _vault_unseal_keys
+      with_fileglob: unseal_key_*
+      run_once: true
+
+    - name: Unseal Vault with unseal keys
+      shell: "vault operator unseal {{ item.stdout }}"
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+      with_items: "{{ _vault_unseal_keys.results }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Enable pki secrets engine
+      shell: vault secrets enable pki
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Tune pki secrets engine
+      shell: vault secrets tune -max-lease-ttl=87600h pki
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Generate Root CA certificate
+      shell: vault write pki/root/generate/internal common_name="dc1.consul" ttl=87600h
+      register: root_ca
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Update the CRL location and issuing certificates
+      shell: |
+        vault write pki/config/urls \
+          issuing_certificates="http://127.0.0.1:8200/v1/pki/ca" \
+          crl_distribution_points="http://127.0.0.1:8200/v1/pki/crl"
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Generate an intermediate CA
+      shell: vault secrets enable -path=pki_int pki
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Set max TTL for certs
+      shell: vault secrets tune -max-lease-ttl=43800h pki_int
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Request an intermediate CSR
+      shell: |
+        vault write -format=json pki_int/intermediate/generate/internal \
+          common_name="dc1.consul Intermediate Authority" \
+          | jq -r '.data.csr' > pki_intermediate.csr
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Sign the CSR
+      shell: |
+        vault write -format=json pki/root/sign-intermediate csr=@pki_intermediate.csr \
+          format=pem_bundle ttl="43800h" \
+          | jq -r '.data.certificate' > intermediate.cert.pem
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Import the certificate into Vault
+      shell: vault write pki_int/intermediate/set-signed certificate=@intermediate.cert.pem
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Create role for issuing certificates
+      shell: |
+        vault write pki_int/roles/consul-dc1 \
+          allowed_domains=dc1.consul \
+          allow_subdomains=true \
+          allow_ip_sans=true \
+          generate_lease=true \
+          max_ttl=43800h
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Enable certificate authentication
+      shell: vault auth enable cert
+      environment:
+        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
+        VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
+      run_once: true
+      delegate_to: "{{ play_hosts | first }}"
+
+    - name: Create consul cert
+      uri:
+        url: "http://{{ play_hosts | first }}:8200/v1/pki_int/issue/consul-dc1"
+        body:
+          common_name: "server.dc1.consul"
+          ttl: "17520h"
+        body_format: json
+        method: POST
+        validate_certs: no
+        headers:
+          X-Vault-Token: "{{ vault_init_parsed.root_token }}"
+      register: consul_cert
+      run_once: true
+      delegate_to: localhost
+
+    - debug:
+        msg: "{{ consul_cert }}"
+      run_once: true
+
+    - name: Copy Consul server certificate
+      copy:
+        dest: "{{ playbook_dir }}/roles/ansible-consul/files/server.crt"
+        content: "{{ consul_cert.json.data.certificate }}"
+        mode: '0400'
+      run_once: true
+      delegate_to: localhost
+      notify:
+        - Restart Consul
+
+    - name: Copy Consul server key
+      copy:
+        dest: "{{ playbook_dir }}/roles/ansible-consul/files/server.key"
+        content: "{{ consul_cert.json.data.private_key }}"
+        mode: '0400'
+      run_once: true
+      delegate_to: localhost
+      notify:
+        - Restart Consul
+
+    - name: Copy Consul server CA certificate
+      copy:
+        dest: "{{ playbook_dir }}/roles/ansible-consul/files/ca.crt"
+        content: "{{ consul_cert.json.data.issuing_ca }}"
+        mode: '0400'
+      run_once: true
+      delegate_to: localhost
+      notify:
+        - Restart Consul
+
+  #   - name: load var from file
+  #     slurp:
+  #       src: /etc/consul/config.json
+  #     register: config_json
+
+  #   - name: append more key/values
+  #     set_fact:
+  #       config_json: '{{ config_json.content | b64decode | from_json | combine({ "tls": { "defaults": { "verify_incoming": true, "verify_outgoing": true, "ca_file": "/etc/consul/ca.crt", "cert_file": "/etc/consul/agent.crt", "key_file": "/etc/consul/agent.key" } }, "auto_encrypt": { "allow_tls": true }}) }}'
+
+  #   - name: write var to file
+  #     copy:
+  #       content: "{{ config_json | to_nice_json }}"
+  #       dest: /etc/consul/config_new.json
+  #     notify:
+  #       - Restart Consul
+
+  #   - name: Validate new Consul config
+  #     shell: consul validate /etc/consul/config_new.json
+
+  #   - name: Move Consul config
+  #     shell: mv /etc/consul/config_new.json /etc/consul/config.json
+
+  # handlers:
+  #   - name: Restart Consul
+  #     systemd_service:
+  #       name: consul
+  #       state: restarted
+  #       enabled: true
+...
