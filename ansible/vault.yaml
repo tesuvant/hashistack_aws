@@ -171,6 +171,7 @@
     dest: "{{ playbook_dir }}/roles/ansible-consul/files/server.crt"
     content: "{{ consul_cert.json.data.certificate }}"
     mode: '0400'
+    owner: ubuntu
   run_once: true
   delegate_to: localhost
 
@@ -179,6 +180,7 @@
     dest: "{{ playbook_dir }}/roles/ansible-consul/files/server.key"
     content: "{{ consul_cert.json.data.private_key }}"
     mode: '0400'
+    owner: ubuntu
   run_once: true
   delegate_to: localhost
 
@@ -187,6 +189,7 @@
     dest: "{{ playbook_dir }}/roles/ansible-consul/files/ca.crt"
     content: "{{ consul_cert.json.data.issuing_ca }}"
     mode: '0400'
+    owner: ubuntu
   run_once: true
   delegate_to: localhost
 

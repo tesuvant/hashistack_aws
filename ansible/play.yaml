@@ -44,23 +44,15 @@
   any_errors_fatal: true
   become: true
   become_user: root
-  pre_tasks:
-    - name: Install packages
-      apt:
-        update_cache: yes
-        pkg:
-          - jq
-          - python3-pip
-          - python3-netaddr
-          - unzip
-        state: present
-      delegate_to: 127.0.0.1
-      run_once: true
   roles:
     - role: ansible-consul
       vars:
         consul_cloud_autodiscovery: false
         consul_tls_enable: true
+        consul_tls_verify_incoming: true
+        consul_tls_verify_incoming_rpc: true
+        consul_tls_verify_incoming_https: true
+        consul_tls_verify_server_hostname: true
         consul_version: "1.15.2"
     - role: geerlingguy.docker
 
