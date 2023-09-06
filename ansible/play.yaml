@@ -1,4 +1,19 @@
 ---
+- name: Bootstrap Vault
+  hosts:
+    - vault_instances
+  become: true
+  gather_facts: true
+  any_errors_fatal: true
+  roles:
+    - role: ansible-vault
+      vars:
+        vault_version: 1.14.2
+  tasks:
+    - name: init Vault
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/vault.yaml"
+
 - name: Bootstrap consul servers & agents
   hosts: consul_instances
   any_errors_fatal: true
@@ -9,6 +24,7 @@
       apt:
         update_cache: yes
         pkg:
+          - jq
           - python3-pip
           - python3-netaddr
           - unzip
@@ -19,127 +35,14 @@
     - role: ansible-consul
       vars:
         consul_cloud_autodiscovery: false
+        consul_tls_enable: true
         consul_version: "1.15.2"
     - role: geerlingguy.docker
 
   tasks:
-    - name: Create config dir for systemd-resolved
-      file:
-        path: /etc/systemd/resolved.conf.d/
-        state: directory
-        mode: '0777'
-        owner: systemd-resolve
-        group: systemd-resolve
-    - name: Create config file for systemd-resolved
-      copy:
-        dest: /etc/systemd/resolved.conf.d/consul.conf
-        mode: '0664'
-        owner: systemd-resolve
-        group: systemd-resolve
-        content: |
-          [Resolve]
-          DNS=127.0.0.1
-          DNSSEC=false
-          Domains=~consul
-    - name: Redirect local DNS - PPREROUTING udp
-      iptables:
-        table: nat
-        chain: PREROUTING
-        protocol: udp
-        match: udp
-        destination_port: 53
-        jump: REDIRECT
-        to_ports: 8600
-    - name: Redirect local DNS - PREROUTING tcp
-      iptables:
-        table: nat
-        chain: PREROUTING
-        protocol: tcp
-        match: tcp
-        destination_port: 53
-        jump: REDIRECT
-        to_ports: 8600
-    - name: Redirect local DNS - OUTPUT udp
-      iptables:
-        table: nat
-        chain: OUTPUT
-        protocol: udp
-        match: udp
-        destination_port: 53
-        jump: REDIRECT
-        to_ports: 8600
-        destination: localhost
-    - name: Redirect local DNS - OUTPUT tcp
-      iptables:
-        table: nat
-        chain: OUTPUT
-        protocol: tcp
-        match: tcp
-        destination_port: 53
-        jump: REDIRECT
-        to_ports: 8600
-        destination: localhost
-    - name: Restart systemd-resolved
-      systemd:
-        name: systemd-resolved
-        state: restarted
-        daemon_reload: true
-
-- name: Bootstrap Vault
-  hosts:
-    - vault_instances
-  become: true
-  gather_facts: true
-  any_errors_fatal: true
-  roles:
-    - role: ansible-vault
-      vars:
-        vault_backend: consul
-        vault_version: 1.14.2
-  tasks:
-    - name: init Vault
-      shell: vault operator init -format json
-      register: vault_init
-      delegate_to: "{{ play_hosts | first }}"
-      run_once: true
-      environment:
-        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
-
-    - name: Parse output of vault init
-      delegate_to: "{{ play_hosts | first }}"
-      run_once: true
-      set_fact:
-        vault_init_parsed: "{{ vault_init.stdout | from_json }}"
-
-    - name: Write unseal keys to files
-      copy:
-        dest: "vault_unseal_key_{{ item.0 }}"
-        content: "{{ item.1 }}"
-      with_indexed_items: "{{ vault_init_parsed.unseal_keys_hex }}"
-      delegate_to: localhost
-      run_once: true
-
-    - name: Write root token to file
-      copy:
-        content: "{{ vault_init_parsed.root_token }}"
-        dest: "vault_rootkey"
-      delegate_to: localhost
-      run_once: true
-
-    - name: Reading unseal key contents
-      delegate_to: localhost
-      ansible.builtin.command: "cat {{ item }}"
-      register: _vault_unseal_keys
-      with_fileglob: vault_unseal_key_*
-      run_once: true
-
-    - name: Unseal Vault with unseal keys
-      ansible.builtin.command: "vault operator unseal {{ item.stdout }}"
-      environment:
-        VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
-      with_items: "{{ _vault_unseal_keys.results }}"
-      run_once: true
-      delegate_to: "{{ play_hosts | first }}"
+    - name: init Consul
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/consul.yaml"
 
 - name: Bootstrap nomad servers & agents
   hosts: nomad_instances

@@ -30,7 +30,7 @@ resource "aws_instance" "servers" {
   instance_type          = var.server_instance_type
   subnet_id              = element(module.vpc.private_subnets, count.index)
   key_name               = aws_key_pair.hashi_ssh.key_name
-  vpc_security_group_ids = [aws_security_group.hashi_nodes.id]
+  vpc_security_group_ids = [aws_security_group.allow_ssh_within_vpc.id, aws_security_group.hashi_nodes.id]
 
   tags = {
     Environment = "test"
@@ -44,7 +44,7 @@ resource "aws_instance" "clients" {
   instance_type          = var.client_instance_type
   subnet_id              = element(module.vpc.private_subnets, count.index)
   key_name               = aws_key_pair.hashi_ssh.key_name
-  vpc_security_group_ids = [aws_security_group.hashi_nodes.id]
+  vpc_security_group_ids = [aws_security_group.allow_ssh_within_vpc.id, aws_security_group.hashi_nodes.id]
 
   tags = {
     Environment = "test"
