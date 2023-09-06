@@ -2,6 +2,12 @@
 ansible_ssh_common_args='-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 consul_join=[%{ for ip in servers-ip ~}"${ip}",%{ endfor ~}]
 
+[vault_instances]
+%{ for index, dns in servers-dns ~}
+${dns} ansible_host=${servers-ip[index]}
+
+%{ endfor ~}
+
 [consul_instances]
 %{ for index, dns in servers-dns ~}
 ${dns} ansible_host=${servers-ip[index]} nomad_node_role=server consul_node_role=%{ if index == 0 ~}bootstrap %{ else ~}server %{ endif ~}
