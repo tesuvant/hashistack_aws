@@ -16,8 +16,7 @@
         state: present
 
 - name: Bootstrap Vault
-  hosts:
-    - vault_instances
+  hosts: vault_instances
   become: true
   gather_facts: true
   any_errors_fatal: true
@@ -26,18 +25,18 @@
       vars:
         vault_raft_group_name: vault_instances
         vault_version: 1.14.2
-  pre_tasks:
-  - name: Add VAULT_ADDR env variable
-    lineinfile:
-      path: "{{ item }}/.bashrc"
-      line: "export VAULT_ADDR=http://{{ ansible_host }}:8200"
-    with_items:
-      - /root
-      - /home/ubuntu
+
+- name: Init Vault
+  hosts: "{{ play_hosts | first }}"
+  become: true
+  gather_facts: true
+  any_errors_fatal: true
   tasks:
     - name: init Vault
       ansible.builtin.include_tasks:
         file: "{{ playbook_dir }}/vault.yaml"
+  environment:
+    VAULT_ADDR: http://{{ ansible_host }}:8200
 
 - name: Bootstrap consul servers & agents
   hosts: consul_instances

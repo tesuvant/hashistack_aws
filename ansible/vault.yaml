@@ -2,14 +2,8 @@
 - name: init Vault
   shell: vault operator init -format json
   register: vault_init
-  delegate_to: "{{ play_hosts | first }}"
-  run_once: true
-  environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
 
 - name: Parse output of vault init
-  delegate_to: "{{ play_hosts | first }}"
-  run_once: true
   set_fact:
     vault_init_parsed: "{{ vault_init.stdout | from_json }}"
 
@@ -28,45 +22,39 @@
   delegate_to: localhost
   run_once: true
 
+- name: Add env vars for root for convenience
+  blockinfile:
+    path: "/root/.bashrc"
+    block: |
+      export VAULT_ADDR=http://{{ ansible_host }}:8200
+      export VAULT_TOKEN={{ vault_init_parsed.root_token }}
+
 - name: Reading unseal key contents
-  delegate_to: localhost
   shell: "cat {{ item }}"
   register: _vault_unseal_keys
   with_fileglob: unseal_key_*
+  delegate_to: localhost
   run_once: true
 
 - name: Unseal Vault with unseal keys
   shell: "vault operator unseal {{ item.stdout }}"
-  environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
   with_items: "{{ _vault_unseal_keys.results }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Enable pki secrets engine
   shell: vault secrets enable pki
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Tune pki secrets engine
   shell: vault secrets tune -max-lease-ttl=87600h pki
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Generate Root CA certificate
   shell: vault write pki/root/generate/internal common_name="dc1.consul" ttl=87600h
   register: root_ca
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Update the CRL location and issuing certificates
   shell: |
@@ -74,26 +62,17 @@
       issuing_certificates="http://127.0.0.1:8200/v1/pki/ca" \
       crl_distribution_points="http://127.0.0.1:8200/v1/pki/crl"
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Generate an intermediate CA
   shell: vault secrets enable -path=pki_int pki
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Set max TTL for certs
   shell: vault secrets tune -max-lease-ttl=43800h pki_int
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Request an intermediate CSR
   shell: |
@@ -101,10 +80,7 @@
       common_name="dc1.consul Intermediate Authority" \
       | jq -r '.data.csr' > pki_intermediate.csr
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Sign the CSR
   shell: |
@@ -112,18 +88,12 @@
       format=pem_bundle ttl="43800h" \
       | jq -r '.data.certificate' > intermediate.cert.pem
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Import the certificate into Vault
   shell: vault write pki_int/intermediate/set-signed certificate=@intermediate.cert.pem
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Create role for issuing certificates
   shell: |
@@ -131,21 +101,17 @@
       allowed_domains=dc1.consul,service.consul,node.dc1.consul,service.dc1.consul,server.dc1.consul \
       allow_subdomains=true \
       allow_ip_sans=true \
+      allow_localhost=true \
+      allow_glob_domains=true \
       generate_lease=true \
       max_ttl=43800h
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Enable certificate authentication
   shell: vault auth enable cert
   environment:
-    VAULT_ADDR: "http://{{ play_hosts | first }}:8200"
     VAULT_TOKEN: "{{ vault_init_parsed.root_token }}"
-  run_once: true
-  delegate_to: "{{ play_hosts | first }}"
 
 - name: Create consul cert
   uri:
@@ -153,7 +119,7 @@
     body:
       common_name: "server.dc1.consul"
       ip_sans: "127.0.0.1,{{ ansible_host }}"
-      alt_names: "server,*.service.consul,localhost,*.node.dc1.consul,*.service.dc1.consul,*.server.dc1.consul,*.dc1.consul"
+      alt_names: "*.service.consul,localhost,*.node.dc1.consul,*.service.dc1.consul,*.server.dc1.consul,*.dc1.consul"
       exclude_cn_from_sans: true
       ttl: "17520h"
     body_format: json
@@ -162,12 +128,10 @@
     headers:
       X-Vault-Token: "{{ vault_init_parsed.root_token }}"
   register: consul_cert
-  run_once: true
   delegate_to: localhost
 
 - debug:
     msg: "{{ consul_cert }}"
-  run_once: true
 
 - name: Copy Consul server certificate
   copy:
