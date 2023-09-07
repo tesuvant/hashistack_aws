@@ -80,7 +80,7 @@ resource "aws_security_group" "hashi_nodes" {
   # Allow internal egress 8300 -> 8600 TCP
   egress {
     from_port   = 8300
-    to_port     = 8500
+    to_port     = 8503
     protocol    = "tcp"
     cidr_blocks = ["${var.vpc_cidr}"]
   }
@@ -94,7 +94,7 @@ resource "aws_security_group" "hashi_nodes" {
   # HTTP API
   ingress {
     from_port   = 8500
-    to_port     = 8500
+    to_port     = 8503
     protocol    = "tcp"
     cidr_blocks = ["${var.vpc_cidr}"]
   }

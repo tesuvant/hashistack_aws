@@ -48,6 +48,7 @@
     - role: ansible-consul
       vars:
         consul_cloud_autodiscovery: false
+        consul_ports_https: 8501
         consul_tls_enable: true
         consul_tls_verify_incoming: true
         consul_tls_verify_incoming_rpc: true
