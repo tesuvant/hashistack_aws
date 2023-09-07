@@ -128,7 +128,7 @@
 - name: Create role for issuing certificates
   shell: |
     vault write pki_int/roles/consul-dc1 \
-      allowed_domains=dc1.consul \
+      allowed_domains=dc1.consul,service.consul,node.dc1.consul,service.dc1.consul,server.dc1.consul \
       allow_subdomains=true \
       allow_ip_sans=true \
       generate_lease=true \
